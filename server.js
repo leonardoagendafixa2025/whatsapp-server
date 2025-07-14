@@ -1,12 +1,10 @@
 const express = require('express');
-const makeWASocket = require('@whiskeysockets/baileys').default;
-const { useSingleFileAuthState } = require('@whiskeysockets/baileys');
+const { default: makeWASocket, useSingleFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys');
 const qrcode = require('qrcode');
-const { DisconnectReason } = require('@whiskeysockets/baileys');
 const fs = require('fs');
+
 const app = express();
 const PORT = process.env.PORT || 8000;
-
 let latestQr = null;
 
 const { state, saveState } = useSingleFileAuthState('./auth_info.json');
@@ -28,7 +26,7 @@ async function startSock() {
         }
 
         if (connection === 'close') {
-            const shouldReconnect = update.lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
+            const shouldReconnect = update?.lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
             console.log('🛑 Conexão encerrada. Reconectar:', shouldReconnect);
             if (shouldReconnect) startSock();
         } else if (connection === 'open') {
@@ -45,6 +43,7 @@ app.get('/qr', async (req, res) => {
     if (!latestQr) {
         return res.status(404).send('QR Code ainda não gerado.');
     }
+
     try {
         const qrImage = await qrcode.toDataURL(latestQr);
         const img = Buffer.from(qrImage.split(',')[1], 'base64');
@@ -60,5 +59,5 @@ app.get('/qr', async (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log('🔌 Backend rodando na porta', PORT);
+    console.log(`🔌 Servidor rodando na porta ${PORT}`);
 });
